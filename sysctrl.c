@@ -13,28 +13,54 @@ void get_max_cpu() {
 		printf("Error in sysctl system call");
 		exit(1);
 	}
-	printf("No if max process for this machine is %d",max_cpu);
+	printf("No if max process for this machine is %d \n",max_cpu);
+}
+
+void list_kernel_process(){
+	/*int mib[2];
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	size_t bufSize = 0;
+	//mib[2] = what;
+	//mib[3] = flag;
+	if (sysctl(mib, 2, &kProcList, &bufSize, NULL, 0) < 0) {
+		perror("Failure calling sysctl");
+	}*/
+	struct kinfo_proc *kProcList = NULL;
+	int err = 0;
+	struct kinfo_proc *proc_list = NULL;
+	size_t length = 0;
+	static const int name[] = { CTL_KERN, KERN_PROC,KERN_PROC_ALL, 0 };
+	err = sysctl((int *)name, (sizeof(name) / sizeof(*name)) - 1, NULL, &length, NULL, 0);
+	if (err) goto ERROR;
+	printf("list of running processes are : %zd",length);
+
+	kProcList = malloc(length);
+
+	
+ERROR:
+	perror(NULL);
+	free(proc_list);
 }
 
 void get_memory_size() {
-	int names[] = {CTL_HW,HW_MEMSIZE};
+//	int names[] = {CTL_HW,HW_PHYSEM};
 	int name_len = 2;
 	int max_cpu;
 	size_t len = sizeof(max_cpu);
 	int error;
-	error = sysctl(names,name_len,&max_cpu,&len,NULL,0);
+	error = sysctlbyname("hw.physmem",&max_cpu,&len,NULL,0);
 	if(error){
 		printf("Error in sysctl system call");
 		exit(1);
 	}
-	printf("Physical memory installed in machine : %d",max_cpu);
+	printf("Physical memory installed in machine : %d \n",max_cpu);
 }
 
-
-
 int main(){
-	get_max_cpu();
-	get_memory_size();
+//	get_max_cpu();
+//	get_memory_size();
+	list_kernel_process();
 	return 0;
 }
 
