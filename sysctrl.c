@@ -1,4 +1,6 @@
 #include<stdio.h>
+#include <pwd.h>
+#include <sys/types.h>
 #include<stdlib.h>
 #include<sys/sysctl.h>
 
@@ -34,10 +36,18 @@ void list_kernel_process(){
 	err = sysctl((int *)name, (sizeof(name) / sizeof(*name)) - 1, NULL, &length, NULL, 0);
 	if (err) goto ERROR;
 	printf("list of running processes are : %zd",length);
-
 	kProcList = malloc(length);
-
+	err = sysctl((int *)name, (sizeof(name) / sizeof(*name)) - 1, kProcList, &length, NULL, 0);
+	int proc_count = length / sizeof(struct kinfo_proc);
+	printf("processes are : %d",proc_count);
 	
+	for(int i=0;i< proc_count;i++){
+		uid_t uid = kProcList[i].kp_eproc.e_ucred.cr_uid;
+		struct passwd *user = getpwuid(uid);
+		char *username = user ? user->pw_name : "user name not found";
+		printf("pid=%d, uid=%d, username=%s\n",kProcList[i].kp_proc.p_pid,uid,username);
+		}
+
 ERROR:
 	perror(NULL);
 	free(proc_list);
