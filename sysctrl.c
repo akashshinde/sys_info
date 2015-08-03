@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include<stdlib.h>
 #include<sys/sysctl.h>
+#include <unistd.h>
 
 void get_max_cpu() {
 	int names[] = {CTL_HW,HW_NCPU};
@@ -18,6 +19,12 @@ void get_max_cpu() {
 	printf("No if max process for this machine is %d \n",max_cpu);
 }
 
+void get_no_of_processors(){
+	long cpu_cores;
+	cpu_cores = sysconf(_SC_NPROCESSORS_ONLN);
+	printf("\n No of cpu cores present in this machine : %ld ",cpu_cores);
+}
+
 void list_kernel_process(){
 	/*int mib[2];
 	mib[0] = CTL_KERN;
@@ -30,11 +37,11 @@ void list_kernel_process(){
 	}*/
 	struct kinfo_proc *kProcList = NULL;
 	int err = 0;
-	struct kinfo_proc *proc_list = NULL;
 	size_t length = 0;
 	static const int name[] = { CTL_KERN, KERN_PROC,KERN_PROC_ALL, 0 };
 	err = sysctl((int *)name, (sizeof(name) / sizeof(*name)) - 1, NULL, &length, NULL, 0);
 	if (err) goto ERROR;
+	system("COLOR 6C");
 	printf("list of running processes are : %zd",length);
 	kProcList = malloc(length);
 	err = sysctl((int *)name, (sizeof(name) / sizeof(*name)) - 1, kProcList, &length, NULL, 0);
@@ -45,12 +52,14 @@ void list_kernel_process(){
 		uid_t uid = kProcList[i].kp_eproc.e_ucred.cr_uid;
 		struct passwd *user = getpwuid(uid);
 		char *username = user ? user->pw_name : "user name not found";
+	//	printf("\nProcess nice values is : %s",kProcList[i].kp_proc.p_nice);
+		printf("\nParent process for below process is : %d",kProcList[i].kp_eproc.e_ppid);
+		printf("\n cpu tick time is : %d ",kProcList[i].kp_proc.p_estcpu);
 		printf("pid=%d, uid=%d, username=%s\n",kProcList[i].kp_proc.p_pid,uid,username);
 		}
 
 ERROR:
 	perror(NULL);
-	free(proc_list);
 }
 
 void get_memory_size() {
@@ -71,6 +80,7 @@ int main(){
 //	get_max_cpu();
 //	get_memory_size();
 	list_kernel_process();
+	get_no_of_processors();
 	return 0;
 }
 
